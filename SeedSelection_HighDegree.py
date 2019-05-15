@@ -69,7 +69,7 @@ class SeedSelectionHDPW:
                 if deg == '0':
                     continue
                 for k in range(self.num_product):
-                    degree_item = (float(deg * self.product_weight_list[k]), k, i)
+                    degree_item = (float(int(deg) * self.product_weight_list[k]), k, i)
                     heap.heappush_max(degree_heap, degree_item)
         f.close()
 
