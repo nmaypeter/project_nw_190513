@@ -52,7 +52,7 @@ class SeedSelectionNGAP:
 
             if ei > 0:
                 for k in range(self.num_product):
-                    if self.seed_cost_dict[i] == 0:
+                    if self.seed_cost_dict[k][i] == 0:
                         break
                     else:
                         mg = round(ei * self.product_list[k][0], 4)
@@ -118,11 +118,11 @@ class SeedSelectionNGAPPW:
 
             if ei > 0:
                 for k in range(self.num_product):
-                    if self.seed_cost_dict[i] == 0:
+                    if self.seed_cost_dict[k][i] == 0:
                         break
                     else:
                         mg = round(ei * self.product_list[k][0] * self.product_weight_list[k], 4)
-                        mg_ratio = round(mg / self.seed_cost_dict[i], 4)
+                        mg_ratio = round(mg / self.seed_cost_dict[k][i], 4)
                     if mg_ratio > mep[0]:
                         mep = (mg_ratio, i_dict)
                     celf_item = (mg_ratio, k, i, 0)
