@@ -24,9 +24,9 @@ class Initialization:
         f.close()
 
         for k in range(num_product):
-            benefit = prod_list[k][0]
+            cost = prod_list[k][1]
             for i in deg_dict:
-                seed_cost_dict[k][i] = round(benefit * deg_dict[i] / max_deg, 4)
+                seed_cost_dict[k][i] = round(deg_dict[i] / max_deg + cost, 4)
 
         return seed_cost_dict
 
