@@ -138,7 +138,7 @@ class EvaluationM:
         self.wpiwp = bool(1)
         self.eva_monte_carlo = 100
 
-    def evaluate(self, bi, wallet_distribution_type, ppp, seed_set_sequence, ss_time):
+    def evaluate(self, bi, wallet_distribution_type, ppp, seed_set_sequence, ss_time_sequence):
         eva_start_time = time.time()
         ini = Initialization(self.dataset_name, self.product_name)
         iniW = IniWallet(self.dataset_name, self.product_name, wallet_distribution_type)
@@ -148,6 +148,8 @@ class EvaluationM:
         product_list = ini.constructProductList()
         num_product = len(product_list)
         wallet_dict = iniW.constructWalletDict()
+        total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
+        total_budget = round(total_cost / 2 ** bi, 4)
 
         ppp_strategy = 'random' * (ppp == 1) + 'expensive' * (ppp == 2) + 'cheap' * (ppp == 3)
         result = []
@@ -186,11 +188,12 @@ class EvaluationM:
         path = 'result/' + self.model_name + '_' + wallet_distribution_type + '_ppp' + str(ppp) + '_wpiwp' * self.wpiwp
         if not os.path.isdir(path):
             os.mkdir(path)
-        fw = open(path + '/' + self.dataset_name + '_' + self.cascade_model + '_' + self.product_name + '_' + str(bi) + '.txt', 'w')
+        fw = open(path + '/' + self.dataset_name + '_' + self.cascade_model + '_' + self.product_name + '_bi' + str(bi) + '.txt', 'w')
         fw.write(self.model_name + ', ' + self.dataset_name + '_' + self.cascade_model + ', ' + self.product_name + '\n' +
-                 'ppp = ' + str(ppp) + ', wd = ' + wallet_distribution_type + ', wpiwp = ' + str(self.wpiwp) + '\n\n' +
+                 'ppp = ' + str(ppp) + ', wd = ' + wallet_distribution_type + ', wpiwp = ' + str(self.wpiwp) + '\n' +
+                 'total_budget = ' + str(total_budget) + ', sample_number = ' + str(len(seed_set_sequence)) + '\n' +
                  'avg_profit = ' + str(avg_pro) + ', avg_budget = ' + str(avg_bud) + '\n' +
-                 'total_time = ' + str(ss_time) + ', avg_time = ' + str(round(ss_time / len(seed_set_sequence), 4)) + '\n')
+                 'total_time = ' + str(round(sum(ss_time_sequence), 4)) + ', avg_time = ' + str(round(sum(ss_time_sequence) / len(ss_time_sequence), 4)) + '\n')
         fw.write('\nprofit_ratio =')
         for kk in range(num_product):
             fw.write(' ' + str(avg_pro_k[kk]))
