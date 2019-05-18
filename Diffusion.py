@@ -1,8 +1,60 @@
-from Initialization import *
+import random
+import numpy as np
+from scipy import stats
+
+class Diffusion:
+    def __init__(self, graph_dict, product_list):
+        ### graph_dict: (dict) the graph
+        ### product_list: (list) the list to record products [k's profit, k's cost, k's price]
+        ### num_product: (int) the kinds of products
+        ### monte: (int) monte carlo times
+        self.graph_dict = graph_dict
+        self.product_list = product_list
+        self.num_product = len(product_list)
+        self.prob_threshold = 0.001
+
+    def getSeedSetProfit(self, s_set):
+        ep = 0.0
+        for k in range(self.num_product):
+            a_n_set, a_e_set = s_set[k].copy(), {}
+            a_n_sequence = [(s, 1) for s in s_set[k]]
+            benefit = self.product_list[k][0]
+
+            while a_n_sequence:
+                i_node, i_acc_prob = a_n_sequence.pop(0)
+
+                # -- notice: prevent the node from owing no receiver --
+                if i_node not in self.graph_dict:
+                    continue
+
+                i_dict = self.graph_dict[i_node]
+                for ii_node in i_dict:
+                    if random.random() > i_dict[ii_node]:
+                        continue
+
+                    if ii_node in a_n_set:
+                        continue
+                    if i_node in a_e_set and ii_node in a_e_set[i_node]:
+                        continue
+
+                    a_n_set.add(ii_node)
+                    if i_node in a_e_set:
+                        a_e_set[i_node].add(ii_node)
+                    else:
+                        a_e_set[i_node] = {ii_node}
+
+                    # -- purchasing --
+                    ep += benefit
+
+                    ii_acc_prob = i_acc_prob * i_dict[ii_node]
+                    if ii_acc_prob >= self.prob_threshold:
+                        a_n_sequence.append((ii_node, ii_acc_prob))
+
+        return round(ep, 4)
 
 
 def getProductWeight(prod_list, wallet_dist_name):
-    price_list = [k[2] for k in prod_list]
+    price_list = [prod[2] for prod in prod_list]
     mu, sigma = 0, 1
     if wallet_dist_name == 'm50e25':
         mu = np.mean(price_list)
@@ -17,180 +69,55 @@ def getProductWeight(prod_list, wallet_dist_name):
     return pw_list
 
 
-class Diffusion:
-    def __init__(self, g_dict, s_c_dict, prod_list, monte):
-        ### g_dict: (dict) the graph
-        ### s_c_dict: (dict) the set of cost for seeds
-        ### prod_list: (list) the set to record products [kk's profit, kk's cost, kk's price]
-        ### num_node: (int) the number of nodes
-        ### num_product: (int) the kinds of products
-        ### monte: (int) monte carlo times
-        self.graph_dict = g_dict
-        self.seed_cost_dict = s_c_dict
-        self.product_list = prod_list
-        self.num_node = len(s_c_dict)
-        self.num_product = len(prod_list)
-        self.prob_threshold = 0.001
-        self.monte = monte
-
-    def getSeedSetProfit(self, s_set):
-        # -- calculate the expected profit for single node when i_node's chosen as a seed for k-product --
-        ### ep: (float2) the expected profit
-        a_n_set, a_e_set = [set() for _ in range(self.num_product)], [{} for _ in range(self.num_product)]
-        for k in range(self.num_product):
-            for s in s_set[k]:
-                a_n_set[k].add(s)
-        ep = 0.0
-
-        # -- insert the children of seeds into try_s_n_sequence --
-        ### try_s_n_sequence: (list) the sequence to store the seed for k-products [k, i]
-        ### try_a_n_sequence: (list) the sequence to store the nodes may be activated for k-products [k, i, prob]
-        try_s_n_sequence, try_a_n_sequence = [], []
-        for k in range(self.num_product):
-            for s in s_set[k]:
-                try_s_n_sequence.append([k, s])
-
-        while len(try_s_n_sequence) > 0:
-            seed = choice(try_s_n_sequence)
-            try_s_n_sequence.remove(seed)
-            k_prod_t, i_node_t = seed[0], seed[1]
-
-            out_dict = self.graph_dict[i_node_t]
-            for out in out_dict:
-                if random.random() > float(out_dict[out]):
-                    continue
-
-                if out in a_n_set[k_prod_t]:
-                    continue
-                if i_node_t in a_e_set[k_prod_t] and out in a_e_set[k_prod_t][i_node_t]:
-                    continue
-                try_a_n_sequence.append([k_prod_t, out, float(out_dict[out])])
-                a_n_set[k_prod_t].add(i_node_t)
-                if i_node_t in a_e_set[k_prod_t]:
-                    a_e_set[k_prod_t][i_node_t].add(out)
-                else:
-                    a_e_set[k_prod_t][i_node_t] = {out}
-
-        while len(try_a_n_sequence) > 0:
-            try_node = choice(try_a_n_sequence)
-            try_a_n_sequence.remove(try_node)
-            k_prod_t, i_node_t, acc_prob_t = try_node[0], try_node[1], try_node[2]
-
-            ### -- purchasing --
-            ep += self.product_list[k_prod_t][0]
-
-            # -- notice: prevent the node from owing no receiver --
-            if i_node_t not in self.graph_dict:
-                continue
-
-            if acc_prob_t < self.prob_threshold:
-                continue
-
-            out_dict = self.graph_dict[i_node_t]
-            for out in out_dict:
-                if random.random() > float(out_dict[out]):
-                    continue
-
-                if out in a_n_set[k_prod_t]:
-                    continue
-                if i_node_t in a_e_set[k_prod_t] and out in a_e_set[k_prod_t][i_node_t]:
-                    continue
-                try_a_n_sequence.append([k_prod_t, out, acc_prob_t * float(out_dict[out])])
-                a_n_set[k_prod_t].add(i_node_t)
-                if i_node_t in a_e_set[k_prod_t]:
-                    a_e_set[k_prod_t][i_node_t].add(out)
-                else:
-                    a_e_set[k_prod_t][i_node_t] = {out}
-
-        return round(ep, 4)
-
-
 class DiffusionPW:
-    def __init__(self, g_dict, s_c_dict, prod_list, pw_list, monte):
-        ### g_dict: (dict) the graph
-        ### s_c_dict: (dict) the set of cost for seeds
-        ### prod_list: (list) the set to record products [kk's profit, kk's cost, kk's price]
-        ### num_node: (int) the number of nodes
+    def __init__(self, graph_dict, product_list, product_weight_list):
+        ### graph_dict: (dict) the graph
+        ### product_list: (list) the list to record products [k's profit, k's cost, k's price]
         ### num_product: (int) the kinds of products
-        ### p_w_list: (list) the product weight list
-        ### monte: (int) monte carlo times
-        self.graph_dict = g_dict
-        self.seed_cost_dict = s_c_dict
-        self.product_list = prod_list
-        self.num_node = len(s_c_dict)
-        self.num_product = len(prod_list)
-        self.pw_list = pw_list
+        ### product_weight_list: (list) the product weight list
+        self.graph_dict = graph_dict
+        self.product_list = product_list
+        self.num_product = len(product_list)
+        self.product_weight_list = product_weight_list
         self.prob_threshold = 0.001
-        self.monte = monte
 
     def getSeedSetProfit(self, s_set):
-        # -- calculate the expected profit for single node when i_node's chosen as a seed for k-product --
-        ### ep: (float2) the expected profit
-        a_n_set, a_e_set = [set() for _ in range(self.num_product)], [{} for _ in range(self.num_product)]
-        for k in range(self.num_product):
-            for s in s_set[k]:
-                a_n_set[k].add(s)
         ep = 0.0
-
-        # -- insert the children of seeds into try_s_n_sequence --
-        ### try_s_n_sequence: (list) the sequence to store the seed for k-products [k, i]
-        ### try_a_n_sequence: (list) the sequence to store the nodes may be activated for k-products [k, i, prob]
-        try_s_n_sequence, try_a_n_sequence = [], []
         for k in range(self.num_product):
-            for s in s_set[k]:
-                try_s_n_sequence.append([k, s])
+            a_n_set, a_e_set = set(), {}
+            a_n_sequence = [(s, 1) for s in s_set[k]]
+            benefit = self.product_list[k][0]
+            product_weight = self.product_weight_list[k]
 
-        while len(try_s_n_sequence) > 0:
-            seed = choice(try_s_n_sequence)
-            try_s_n_sequence.remove(seed)
-            k_prod_t, i_node_t = seed[0], seed[1]
+            while a_n_sequence:
+                i_node, i_acc_prob = a_n_sequence.pop(0)
 
-            out_dict = self.graph_dict[i_node_t]
-            for out in out_dict:
-                if random.random() > float(out_dict[out]):
+                # -- notice: prevent the node from owing no receiver --
+                if i_node not in self.graph_dict:
                     continue
 
-                if out in a_n_set[k_prod_t]:
-                    continue
-                if i_node_t in a_e_set[k_prod_t] and out in a_e_set[k_prod_t][i_node_t]:
-                    continue
-                try_a_n_sequence.append([k_prod_t, out, float(out_dict[out])])
-                a_n_set[k_prod_t].add(i_node_t)
-                if i_node_t in a_e_set[k_prod_t]:
-                    a_e_set[k_prod_t][i_node_t].add(out)
-                else:
-                    a_e_set[k_prod_t][i_node_t] = {out}
+                i_dict = self.graph_dict[i_node]
+                for ii_node in i_dict:
+                    if random.random() > i_dict[ii_node]:
+                        continue
 
-        while len(try_a_n_sequence) > 0:
-            try_node = choice(try_a_n_sequence)
-            try_a_n_sequence.remove(try_node)
-            k_prod_t, i_node_t, acc_prob_t = try_node[0], try_node[1], try_node[2]
+                    if ii_node in a_n_set:
+                        continue
+                    if i_node in a_e_set and ii_node in a_e_set[i_node]:
+                        continue
 
-            ### -- purchasing --
-            ep += self.product_list[k_prod_t][0] * self.pw_list[k_prod_t]
+                    a_n_set.add(i_node)
+                    if i_node in a_e_set:
+                        a_e_set[i_node].add(ii_node)
+                    else:
+                        a_e_set[i_node] = {ii_node}
 
-            # -- notice: prevent the node from owing no receiver --
-            if i_node_t not in self.graph_dict:
-                continue
+                    # -- purchasing --
+                    ep += benefit * product_weight
 
-            if acc_prob_t < self.prob_threshold:
-                continue
-
-            out_dict = self.graph_dict[i_node_t]
-            for out in out_dict:
-                if random.random() > float(out_dict[out]):
-                    continue
-
-                if out in a_n_set[k_prod_t]:
-                    continue
-                if i_node_t in a_e_set[k_prod_t] and out in a_e_set[k_prod_t][i_node_t]:
-                    continue
-                try_a_n_sequence.append([k_prod_t, out, acc_prob_t * float(out_dict[out])])
-                a_n_set[k_prod_t].add(i_node_t)
-                if i_node_t in a_e_set[k_prod_t]:
-                    a_e_set[k_prod_t][i_node_t].add(out)
-                else:
-                    a_e_set[k_prod_t][i_node_t] = {out}
+                    ii_acc_prob = i_acc_prob * i_dict[ii_node]
+                    if ii_acc_prob >= self.prob_threshold:
+                        a_n_sequence.append((ii_node, ii_acc_prob))
 
         return round(ep, 4)
 
@@ -222,17 +149,14 @@ def combineDict(o_dict, n_dict):
 
 
 class DiffusionAccProb:
-    def __init__(self, g_dict, s_c_dict, prod_list):
-        ### g_dict: (dict) the graph
-        ### s_c_dict: (dict) the set of cost for seeds
-        ### prod_list: (list) the set to record products [kk's profit, kk's cost, kk's price]
+    def __init__(self, graph_dict, product_list):
+        ### graph_dict: (dict) the graph
+        ### product_list: (list) the set to record products [kk's profit, kk's cost, kk's price]
         ### num_node: (int) the number of nodes
         ### num_product: (int) the kinds of products
-        self.graph_dict = g_dict
-        self.seed_cost_dict = s_c_dict
-        self.product_list = prod_list
-        self.num_node = len(s_c_dict)
-        self.num_product = len(prod_list)
+        self.graph_dict = graph_dict
+        self.product_list = product_list
+        self.num_product = len(product_list)
         self.prob_threshold = 0.001
 
     def buildNodeDict(self, s_set, i_node, i_acc_prob, i_anc_set):
@@ -272,7 +196,7 @@ class DiffusionAccProb:
                                             insertProbIntoDict(i_dict, iv_node, iv_prob, iv_anc_set)
 
                                             if iv_node in self.graph_dict and iv_prob > self.prob_threshold:
-                                                diff_d = DiffusionAccProb(self.graph_dict, self.seed_cost_dict, self.product_list)
+                                                diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
                                                 iv_dict = diff_d.buildNodeDict(s_set, iv_node, iv_prob, iv_anc_set)
                                                 combineDict(i_dict, iv_dict)
 
@@ -301,10 +225,10 @@ class DiffusionAccProb:
 
         return i_dict
 
-    def getExpectedProfitDictBatch(self, s_set, now_s_forest, mep_item_seq, mep_item_dict_seq):
+    def updateNodeDictBatch(self, s_set, now_s_forest, mep_item_seq, mep_item_dict_seq):
         mep_item_seq = [(mep_item_l[1], mep_item_l[2]) for mep_item_l in mep_item_seq]
         mep_item_dictionary = [{} for _ in range(len(mep_item_seq))]
-        diff_d = DiffusionAccProb(self.graph_dict, self.seed_cost_dict, self.product_list)
+        diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
 
         for k in range(self.num_product):
             mep_item_seq_temp = [mep_item_temp for mep_item_temp in mep_item_seq if mep_item_temp[0] == k]
