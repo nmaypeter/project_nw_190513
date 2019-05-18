@@ -202,63 +202,6 @@ class DiffusionAccProb:
 
         return i_dict
 
-    def buildNodeDict2(self):
-        anc_dict = {}
-        # full_anc_dict = {}
-
-        for i in self.graph_dict:
-            print(i)
-            i_dict = {}
-            # i_full_dict = {}
-            i_seq = [(1, i, set())]
-
-            while i_seq:
-                i_prob, i_node, i_anc_set = i_seq.pop(0)
-                if i_node in self.graph_dict:
-                    for ii_node in self.graph_dict[i_node]:
-                        ii_prob = round(self.graph_dict[i_node][ii_node] * i_prob, 4)
-                        ii_anc_set = i_anc_set.copy()
-                        ii_anc_set.add(ii_node)
-                        if ii_prob >= self.prob_threshold:
-                            insertProbIntoDict(i_dict, ii_node, ii_prob, ii_anc_set)
-                            # insertProbIntoDict(i_full_dict, ii_node, ii_prob, ii_anc_set)
-                            # if ii_node != i:
-                            #     insertProbIntoDict(i_dict, ii_node, ii_prob, ii_anc_set)
-
-                        if ii_prob > self.prob_threshold:
-                            if ii_node in anc_dict:
-                                ii_dict = copy.deepcopy(anc_dict[ii_node])
-                                for node in ii_dict:
-                                    ii_dict[node] = [(round(prob * ii_prob, 4), anc_set | ii_anc_set) for (prob, anc_set) in ii_dict[node] if round(prob * ii_prob, 4) >= self.prob_threshold]
-                                combineDict(i_dict, ii_dict)
-                            # if ii_node in full_anc_dict:
-                            #     for node in full_anc_dict[ii_node]:
-                            #         for prob, anc_set in full_anc_dict[ii_node][node]:
-                            #             prob = round(prob * ii_prob, 4)
-                            #             if prob >= self.prob_threshold:
-                            #                 anc_set = anc_set.copy()
-                            #                 anc_set.add(ii_node)
-                            #                 insertProbIntoDict(i_full_dict, node, prob, anc_set)
-                            #                 if node != i:
-                            #                     insertProbIntoDict(i_dict, node, prob, anc_set)
-                            else:
-                                if ii_node in self.graph_dict:
-                                    i_seq.append((ii_prob, ii_node, ii_anc_set))
-
-            i_dict = {i: i_dict}
-            # i_full_dict = {i: i_full_dict}
-            combineDict(anc_dict, i_dict)
-            # combineDict(full_anc_dict, i_full_dict)
-        ancient_dict = {}
-        for i in anc_dict:
-            ancient_dict[i] = {}
-            for node in anc_dict[i]:
-                anc_dict[i][node] = [(prob, anc_set) for (prob, anc_set) in anc_dict[i][node] if i not in anc_set]
-                if anc_dict[i][node]:
-                    ancient_dict[i][node] = anc_dict[i][node]
-
-        return ancient_dict
-
     @staticmethod
     def buildNodeDictBatch(now_s_forest, mep_item_seq):
         s_dict_seq = [{} for _ in range(len(mep_item_seq))]
