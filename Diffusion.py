@@ -46,9 +46,57 @@ class Diffusion:
                     # -- purchasing --
                     ep += benefit
 
-                    ii_acc_prob = i_acc_prob * i_dict[ii_node]
+                    ii_acc_prob = round(i_acc_prob * i_dict[ii_node], 4)
                     if ii_acc_prob >= self.prob_threshold:
-                        a_n_sequence.append((ii_node, ii_acc_prob))
+                        if ii_node not in self.graph_dict:
+                            continue
+
+                        ii_dict = self.graph_dict[ii_node]
+                        for iii_node in ii_dict:
+                            if random.random() > ii_dict[iii_node]:
+                                continue
+
+                            if iii_node in a_n_set:
+                                continue
+                            if ii_node in a_e_set and iii_node in a_e_set[ii_node]:
+                                continue
+
+                            a_n_set.add(iii_node)
+                            if ii_node in a_e_set:
+                                a_e_set[ii_node].add(iii_node)
+                            else:
+                                a_e_set[ii_node] = {iii_node}
+
+                            # -- purchasing --
+                            ep += benefit
+
+                            iii_acc_prob = round(ii_acc_prob * ii_dict[iii_node], 4)
+                            if iii_acc_prob >= self.prob_threshold:
+                                if iii_node not in self.graph_dict:
+                                    continue
+
+                                iii_dict = self.graph_dict[ii_node]
+                                for iv_node in iii_dict:
+                                    if random.random() > iii_dict[iv_node]:
+                                        continue
+
+                                    if iv_node in a_n_set:
+                                        continue
+                                    if iii_node in a_e_set and iv_node in a_e_set[iii_node]:
+                                        continue
+
+                                    a_n_set.add(iv_node)
+                                    if iii_node in a_e_set:
+                                        a_e_set[iii_node].add(iv_node)
+                                    else:
+                                        a_e_set[iii_node] = {iv_node}
+
+                                    # -- purchasing --
+                                    ep += benefit
+
+                                    iv_acc_prob = round(iii_acc_prob * iii_dict[iv_node], 4)
+                                    if iv_acc_prob > self.prob_threshold:
+                                        a_n_sequence.append((iv_node, iv_acc_prob))
 
         return round(ep, 4)
 
@@ -84,7 +132,7 @@ class DiffusionPW:
     def getSeedSetProfit(self, s_set):
         ep = 0.0
         for k in range(self.num_product):
-            a_n_set, a_e_set = set(), {}
+            a_n_set, a_e_set = s_set[k].copy(), {}
             a_n_sequence = [(s, 1) for s in s_set[k]]
             benefit = self.product_list[k][0]
             product_weight = self.product_weight_list[k]
@@ -106,7 +154,7 @@ class DiffusionPW:
                     if i_node in a_e_set and ii_node in a_e_set[i_node]:
                         continue
 
-                    a_n_set.add(i_node)
+                    a_n_set.add(ii_node)
                     if i_node in a_e_set:
                         a_e_set[i_node].add(ii_node)
                     else:
@@ -115,9 +163,57 @@ class DiffusionPW:
                     # -- purchasing --
                     ep += benefit * product_weight
 
-                    ii_acc_prob = i_acc_prob * i_dict[ii_node]
+                    ii_acc_prob = round(i_acc_prob * i_dict[ii_node], 4)
                     if ii_acc_prob >= self.prob_threshold:
-                        a_n_sequence.append((ii_node, ii_acc_prob))
+                        if ii_node not in self.graph_dict:
+                            continue
+
+                        ii_dict = self.graph_dict[ii_node]
+                        for iii_node in ii_dict:
+                            if random.random() > ii_dict[iii_node]:
+                                continue
+
+                            if iii_node in a_n_set:
+                                continue
+                            if ii_node in a_e_set and iii_node in a_e_set[ii_node]:
+                                continue
+
+                            a_n_set.add(iii_node)
+                            if ii_node in a_e_set:
+                                a_e_set[ii_node].add(iii_node)
+                            else:
+                                a_e_set[ii_node] = {iii_node}
+
+                            # -- purchasing --
+                            ep += benefit * product_weight
+
+                            iii_acc_prob = round(ii_acc_prob * ii_dict[iii_node], 4)
+                            if iii_acc_prob >= self.prob_threshold:
+                                if iii_node not in self.graph_dict:
+                                    continue
+
+                                iii_dict = self.graph_dict[ii_node]
+                                for iv_node in iii_dict:
+                                    if random.random() > iii_dict[iv_node]:
+                                        continue
+
+                                    if iv_node in a_n_set:
+                                        continue
+                                    if iii_node in a_e_set and iv_node in a_e_set[iii_node]:
+                                        continue
+
+                                    a_n_set.add(iv_node)
+                                    if iii_node in a_e_set:
+                                        a_e_set[iii_node].add(iv_node)
+                                    else:
+                                        a_e_set[iii_node] = {iv_node}
+
+                                    # -- purchasing --
+                                    ep += benefit * product_weight
+
+                                    iv_acc_prob = round(iii_acc_prob * iii_dict[iv_node], 4)
+                                    if iv_acc_prob > self.prob_threshold:
+                                        a_n_sequence.append((iv_node, iv_acc_prob))
 
         return round(ep, 4)
 
