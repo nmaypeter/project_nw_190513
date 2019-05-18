@@ -15,7 +15,7 @@ class Model:
         self.budget_iteration = budget_iteration
         self.wd_seq = ['m50e25', 'm99e96']
         self.wpiwp = bool(1)
-        self.sample_number = 10 * ('ap' not in model_name) + 1 * ('ap' in model_name)
+        self.sample_number = 1
         self.ppp_seq = [2, 3]
         self.monte_carlo = 10
         self.batch = 20
@@ -28,7 +28,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssng_model = SeedSelectionNG(graph_dict, seed_cost_dict, product_list, self.monte_carlo)
         diff_model = Diffusion(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -93,12 +94,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -111,7 +116,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssng_model = SeedSelectionNG(graph_dict, seed_cost_dict, product_list, self.monte_carlo)
         diff_model = Diffusion(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -180,12 +186,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -198,7 +208,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssng_model = SeedSelectionNG(graph_dict, seed_cost_dict, product_list, self.monte_carlo)
         diff_model = Diffusion(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -267,12 +278,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -285,7 +300,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngap_model = SeedSelectionNGAP(graph_dict, seed_cost_dict, product_list)
         diffap_model = DiffusionAccProb(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -363,12 +379,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -381,7 +401,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngap_model = SeedSelectionNGAP(graph_dict, seed_cost_dict, product_list)
         diffap_model = DiffusionAccProb(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -463,12 +484,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -481,7 +506,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngap_model = SeedSelectionNGAP(graph_dict, seed_cost_dict, product_list)
         diffap_model = DiffusionAccProb(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -563,12 +589,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -581,7 +611,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         sshd_model = SeedSelectionHD(self.dataset_name, graph_dict, product_list)
         for sample_count in range(self.sample_number):
             ss_start_time = time.time()
@@ -626,12 +657,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -644,7 +679,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         sshd_model = SeedSelectionHD(self.dataset_name, graph_dict, product_list)
         for sample_count in range(self.sample_number):
             ss_start_time = time.time()
@@ -689,12 +725,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -707,7 +747,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[0.0 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[0.0 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         sspmis_model = SeedSelectionPMIS(graph_dict, seed_cost_dict, product_list, self.monte_carlo)
         diff_model = Diffusion(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -815,7 +856,8 @@ class Model:
         num_product = len(product_list)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssr_model = SeedSelectionRandom(graph_dict, product_list)
         for sample_count in range(self.sample_number):
             ss_start_time = time.time()
@@ -860,12 +902,16 @@ class Model:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for wallet_distribution_type in self.wd_seq:
                 for ppp in self.ppp_seq:
                     eva_model.evaluate(bi, wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
@@ -879,7 +925,7 @@ class ModelPW:
         self.budget_iteration = budget_iteration
         self.wallet_distribution_type = wallet_distribution_type
         self.wpiwp = bool(1)
-        self.sample_number = 10 * ('ap' not in model_name) + 1 * ('ap' in model_name)
+        self.sample_number = 1
         self.ppp_seq = [2, 3]
         self.monte_carlo = 10
         self.batch = 20
@@ -893,7 +939,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngpw_model = SeedSelectionNGPW(graph_dict, seed_cost_dict, product_list, product_weight_list, self.monte_carlo)
         diffpw_model = DiffusionPW(graph_dict, product_list, product_weight_list)
         for sample_count in range(self.sample_number):
@@ -958,12 +1005,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -976,7 +1027,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngpw_model = SeedSelectionNGPW(graph_dict, seed_cost_dict, product_list, product_weight_list, self.monte_carlo)
         diffpw_model = DiffusionPW(graph_dict, product_list, product_weight_list)
         for sample_count in range(self.sample_number):
@@ -1045,12 +1097,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -1063,7 +1119,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngpw_model = SeedSelectionNGPW(graph_dict, seed_cost_dict, product_list, product_weight_list, self.monte_carlo)
         diffpw_model = DiffusionPW(graph_dict, product_list, product_weight_list)
         for sample_count in range(self.sample_number):
@@ -1132,12 +1189,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -1150,7 +1211,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngappw_model = SeedSelectionNGAPPW(graph_dict, seed_cost_dict, product_list, product_weight_list)
         diffap_model = DiffusionAccProb(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -1228,12 +1290,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -1246,7 +1312,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngappw_model = SeedSelectionNGAPPW(graph_dict, seed_cost_dict, product_list, product_weight_list)
         diffap_model = DiffusionAccProb(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -1328,12 +1395,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -1346,7 +1417,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         ssngappw_model = SeedSelectionNGAPPW(graph_dict, seed_cost_dict, product_list, product_weight_list)
         diffap_model = DiffusionAccProb(graph_dict, product_list)
         for sample_count in range(self.sample_number):
@@ -1428,12 +1500,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -1446,7 +1522,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         sshdpw_model = SeedSelectionHDPW(self.dataset_name, graph_dict, product_list, product_weight_list)
         for sample_count in range(self.sample_number):
             ss_start_time = time.time()
@@ -1491,12 +1568,16 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
 
@@ -1509,7 +1590,8 @@ class ModelPW:
         product_weight_list = getProductWeight(product_list, self.wallet_distribution_type)
         total_cost = sum(seed_cost_dict[k][i] for i in seed_cost_dict[0] for k in range(num_product))
 
-        seed_set_sequence, ss_time_sequence = [[] for _ in range(len(self.budget_iteration))], [[] for _ in range(len(self.budget_iteration))]
+        seed_set_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
+        ss_time_sequence = [[-1 for _ in range(self.sample_number)] for _ in range(len(self.budget_iteration))]
         sshdpw_model = SeedSelectionHDPW(self.dataset_name, graph_dict, product_list, product_weight_list)
         for sample_count in range(self.sample_number):
             ss_start_time = time.time()
@@ -1554,11 +1636,15 @@ class ModelPW:
 
                 ss_time = round(time.time() - ss_start_time + ss_acc_time, 4)
                 print('ss_time = ' + str(ss_time) + 'sec, cost = ' + str(now_budget) + ', seed_set_length = ' + str([len(s_set_k) for s_set_k in seed_set]))
-                ss_time_sequence[bi_index].append(ss_time)
-                seed_set_sequence[bi_index].append(seed_set)
+                seed_set_sequence[bi_index][sample_count] = seed_set
+                ss_time_sequence[bi_index][sample_count] = ss_time
 
         eva_model = EvaluationM(self.model_name, self.dataset_name, self.product_name, self.cascade_model)
         for bi in self.budget_iteration:
             bi_index = self.budget_iteration.index(bi)
+            while -1 in seed_set_sequence[bi_index]:
+                no_data_index = seed_set_sequence[bi_index].index(-1)
+                seed_set_sequence[bi_index][no_data_index] = seed_set_sequence[bi_index - 1][no_data_index]
+                ss_time_sequence[bi_index][no_data_index] = ss_time_sequence[bi_index - 1][no_data_index]
             for ppp in self.ppp_seq:
                 eva_model.evaluate(bi, self.wallet_distribution_type, ppp, seed_set_sequence[bi_index], ss_time_sequence[bi_index])
