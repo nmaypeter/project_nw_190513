@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from scipy import stats
+import ast
 
 class Diffusion:
     def __init__(self, graph_dict, product_list):
@@ -297,6 +298,20 @@ class DiffusionAccProb:
                                                 combineDict(i_dict, iv_dict)
 
         return i_dict
+
+    @staticmethod
+    def constructNodeDict(data_name, cas):
+        i_anc_dict = {}
+        time_build_dict = 0.0
+        path = 'data/' + data_name + '/dict_' + cas + '.txt'
+        with open(path) as f:
+            for line in f:
+                (node, time, dictionary) = line.split('\t')
+                time_build_dict += float(time)
+                i_anc_dict[node] = ast.literal_eval(dictionary)
+        f.close()
+
+        return i_anc_dict, time_build_dict
 
     @staticmethod
     def buildNodeDictBatch(now_s_forest, mep_item_seq):
