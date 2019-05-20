@@ -1,7 +1,6 @@
 import random
 import numpy as np
 from scipy import stats
-import ast
 
 class Diffusion:
     def __init__(self, graph_dict, product_list):
@@ -101,7 +100,6 @@ class Diffusion:
 
         return round(ep, 4)
 
-
 def getProductWeight(prod_list, wallet_dist_name):
     price_list = [prod[2] for prod in prod_list]
     mu, sigma = 0, 1
@@ -116,7 +114,6 @@ def getProductWeight(prod_list, wallet_dist_name):
     pw_list = [round(float(Y[np.argwhere(X == p)]), 4) for p in price_list]
 
     return pw_list
-
 
 class DiffusionPW:
     def __init__(self, graph_dict, product_list, product_weight_list):
@@ -218,24 +215,27 @@ class DiffusionPW:
 
         return round(ep, 4)
 
-
 def getExpectedInf(i_dict):
     ei = 0.0
     for item in i_dict:
         acc_prob = 1.0
-        for prob, prob_dict in i_dict[item]:
+        for prob in i_dict[item]:
             acc_prob *= (1 - prob)
         ei += (1 - acc_prob)
 
     return ei
 
-
-def insertProbIntoDict(i_dict, i_node, i_prob, i_anc_set):
+def insertProbAncIntoDict(i_dict, i_node, i_prob, i_anc_set):
     if i_node not in i_dict:
         i_dict[i_node] = [(i_prob, i_anc_set)]
     else:
         i_dict[i_node].append((i_prob, i_anc_set))
 
+def insertProbIntoDict(i_dict, i_node, i_prob):
+    if i_node not in i_dict:
+        i_dict[i_node] = [i_prob]
+    else:
+        i_dict[i_node].append(i_prob)
 
 def combineDict(o_dict, n_dict):
     for item in n_dict:
@@ -243,7 +243,6 @@ def combineDict(o_dict, n_dict):
             o_dict[item] = n_dict[item]
         else:
             o_dict[item] += n_dict[item]
-
 
 class DiffusionAccProb:
     def __init__(self, graph_dict, product_list):
@@ -256,7 +255,44 @@ class DiffusionAccProb:
         self.num_product = len(product_list)
         self.prob_threshold = 0.001
 
-    def buildNodeDict(self, s_set, i_node, i_acc_prob, i_anc_set):
+    def buildNodeExpectedInfDict(self, s_set, i_node, i_acc_prob):
+        i_dict = {}
+
+        if i_node in self.graph_dict:
+            for ii_node in self.graph_dict[i_node]:
+                if ii_node in s_set:
+                    continue
+                ii_prob = round(float(self.graph_dict[i_node][ii_node]) * i_acc_prob, 4)
+
+                if ii_prob >= self.prob_threshold:
+                    insertProbIntoDict(i_dict, ii_node, ii_prob)
+
+                    if ii_node in self.graph_dict:
+                        for iii_node in self.graph_dict[ii_node]:
+                            if iii_node in s_set:
+                                continue
+                            iii_prob = round(float(self.graph_dict[ii_node][iii_node]) * ii_prob, 4)
+
+                            if iii_prob >= self.prob_threshold:
+                                insertProbIntoDict(i_dict, iii_node, iii_prob)
+
+                                if iii_node in self.graph_dict:
+                                    for iv_node in self.graph_dict[iii_node]:
+                                        if iv_node in s_set:
+                                            continue
+                                        iv_prob = round(float(self.graph_dict[iii_node][iv_node]) * iii_prob, 4)
+
+                                        if iv_prob >= self.prob_threshold:
+                                            insertProbIntoDict(i_dict, iv_node, iv_prob)
+
+                                            if iv_node in self.graph_dict and iv_prob > self.prob_threshold:
+                                                diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
+                                                iv_dict = diff_d.buildNodeExpectedInfDict(s_set, iv_node, iv_prob)
+                                                combineDict(i_dict, iv_dict)
+
+        return i_dict
+
+    def buildNodeAncDict(self, s_set, i_node, i_acc_prob, i_anc_set):
         i_dict = {}
 
         if i_node in self.graph_dict:
@@ -268,7 +304,7 @@ class DiffusionAccProb:
                 if ii_prob >= self.prob_threshold:
                     ii_anc_set = i_anc_set.copy()
                     ii_anc_set.add(ii_node)
-                    insertProbIntoDict(i_dict, ii_node, ii_prob, ii_anc_set)
+                    insertProbAncIntoDict(i_dict, ii_node, ii_prob, ii_anc_set)
 
                     if ii_node in self.graph_dict:
                         for iii_node in self.graph_dict[ii_node]:
@@ -279,7 +315,7 @@ class DiffusionAccProb:
                             if iii_prob >= self.prob_threshold:
                                 iii_anc_set = ii_anc_set.copy()
                                 iii_anc_set.add(iii_node)
-                                insertProbIntoDict(i_dict, iii_node, iii_prob, iii_anc_set)
+                                insertProbAncIntoDict(i_dict, iii_node, iii_prob, iii_anc_set)
 
                                 if iii_node in self.graph_dict:
                                     for iv_node in self.graph_dict[iii_node]:
@@ -290,72 +326,60 @@ class DiffusionAccProb:
                                         if iv_prob >= self.prob_threshold:
                                             iv_anc_set = iii_anc_set.copy()
                                             iv_anc_set.add(iv_node)
-                                            insertProbIntoDict(i_dict, iv_node, iv_prob, iv_anc_set)
+                                            insertProbAncIntoDict(i_dict, iv_node, iv_prob, iv_anc_set)
 
                                             if iv_node in self.graph_dict and iv_prob > self.prob_threshold:
                                                 diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
-                                                iv_dict = diff_d.buildNodeDict(s_set, iv_node, iv_prob, iv_anc_set)
+                                                iv_dict = diff_d.buildNodeAncDict(s_set, iv_node, iv_prob, iv_anc_set)
                                                 combineDict(i_dict, iv_dict)
 
         return i_dict
 
-    @staticmethod
-    def constructNodeDict(data_name, cas):
-        i_anc_dict = {}
-        time_build_dict = 0.0
-        path = 'data/' + data_name + '/dict_' + cas + '.txt'
-        with open(path) as f:
-            for line in f:
-                (node, time, dictionary) = line.split('\t')
-                time_build_dict += float(time)
-                i_anc_dict[node] = ast.literal_eval(dictionary)
-        f.close()
+    def updateNowSeedForest(self, s_set, seed_forest, i_node):
+        now_seed_forest = {}
 
-        return i_anc_dict, time_build_dict
+        for i in seed_forest:
+            for i_prob, i_anc in seed_forest[i]:
+                if i_node not in i_anc:
+                    insertProbAncIntoDict(now_seed_forest, i, i_prob, i_anc)
 
-    @staticmethod
-    def buildNodeDictBatch(now_s_forest, mep_item_seq):
-        s_dict_seq = [{} for _ in range(len(mep_item_seq))]
+        diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
+        node_anc_dict = diff_d.buildNodeAncDict(s_set, i_node, 1, set())
+        combineDict(now_seed_forest, node_anc_dict)
 
-        for i in now_s_forest:
-            for i_prob, i_anc in now_s_forest[i]:
-                for mep_item_seq_id in range(len(mep_item_seq)):
-                    if mep_item_seq[mep_item_seq_id][1] not in i_anc:
-                        insertProbIntoDict(s_dict_seq[mep_item_seq_id], i, i_prob, i_anc)
+        return now_seed_forest
 
-        return s_dict_seq
+    def updateNowSeedForestExpectedInfBatch(self, s_set, seed_forest, mep_item_seq):
+        now_seed_forest_seq = [{} for _ in range(len(mep_item_seq))]
 
-    @staticmethod
-    def excludeSeedSetFromIDict(s_set, mep_item_dict):
-        i_dict = {}
+        for i in seed_forest:
+            for i_prob, i_anc in seed_forest[i]:
+                for mep_item_seq_item in mep_item_seq:
+                    if mep_item_seq_item[1] not in i_anc:
+                        mep_item_seq_id = mep_item_seq.index(mep_item_seq_item)
+                        insertProbIntoDict(now_seed_forest_seq[mep_item_seq_id], i, i_prob)
 
-        for i in mep_item_dict:
-            for i_prob, i_anc in mep_item_dict[i]:
-                if not (s_set & i_anc):
-                    insertProbIntoDict(i_dict, i, i_prob, i_anc)
+        diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
+        for mep_item_seq_item in mep_item_seq:
+            s_set_t = s_set.copy()
+            s_set_t.add(mep_item_seq_item[1])
+            node_anc_dict = diff_d.buildNodeExpectedInfDict(s_set_t, mep_item_seq_item[1], 1)
+            mep_item_seq_id = mep_item_seq.index(mep_item_seq_item)
+            combineDict(now_seed_forest_seq[mep_item_seq_id], node_anc_dict)
 
-        return i_dict
+        return now_seed_forest_seq
 
-    def updateNodeDictBatch(self, s_set, now_s_forest, mep_item_seq, mep_item_dict_seq):
+    def updateNodeDictBatch(self, s_set, now_seed_forest, mep_item_seq):
         mep_item_seq = [(mep_item_l[1], mep_item_l[2]) for mep_item_l in mep_item_seq]
         mep_item_dictionary = [{} for _ in range(len(mep_item_seq))]
         diff_d = DiffusionAccProb(self.graph_dict, self.product_list)
 
         for k in range(self.num_product):
             mep_item_seq_temp = [mep_item_temp for mep_item_temp in mep_item_seq if mep_item_temp[0] == k]
-            if len(mep_item_seq_temp) != 0:
-                s_dict_seq = diff_d.buildNodeDictBatch(now_s_forest[k], mep_item_seq_temp)
-                for mep_item_seq_temp_item in mep_item_seq_temp:
-                    mep_item_id = mep_item_seq.index(mep_item_seq_temp_item)
-                    mep_item_s_dict = s_dict_seq.pop(0)
-                    mep_item_dictionary[mep_item_id] = mep_item_s_dict
-
-        for lmis in range(len(mep_item_seq)):
-            k_prod, i_node = mep_item_seq[lmis]
-            s_set_k = s_set[k_prod].copy()
-            s_set_k.add(i_node)
-            lmis_o_dict = mep_item_dictionary[lmis]
-            lmis_n_dict = diff_d.excludeSeedSetFromIDict(s_set_k, mep_item_dict_seq[lmis])
-            combineDict(lmis_o_dict, lmis_n_dict)
+            now_seed_forest_seq = diff_d.updateNowSeedForestExpectedInfBatch(s_set[k], now_seed_forest[k], mep_item_seq_temp)
+            for mep_item_seq_temp_item in mep_item_seq_temp:
+                mep_item_id = mep_item_seq.index(mep_item_seq_temp_item)
+                mep_item_s_dict = now_seed_forest_seq.pop(0)
+                mep_item_dictionary[mep_item_id] = mep_item_s_dict
 
         return mep_item_dictionary
