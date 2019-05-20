@@ -138,7 +138,7 @@ class EvaluationM:
         self.wpiwp = bool(1)
         self.eva_monte_carlo = 100
 
-    def evaluate(self, bi, wallet_distribution_type, ppp, seed_set_sequence, ss_time_sequence):
+    def evaluate(self, bi, wallet_distribution_type, ppp, seed_set_sequence, ss_time_sequence, budget_iteration_length):
         eva_start_time = time.time()
         ini = Initialization(self.dataset_name, self.product_name)
         iniW = IniWallet(self.dataset_name, self.product_name, wallet_distribution_type)
@@ -185,7 +185,8 @@ class EvaluationM:
         avg_pro_k = [round(sum(r[4][kk] for r in result) / len(seed_set_sequence), 4) for kk in range(num_product)]
         avg_bud_k = [round(sum(r[5][kk] for r in result) / len(seed_set_sequence), 4) for kk in range(num_product)]
 
-        path = 'result/' + self.model_name + '_' + wallet_distribution_type + '_ppp' + str(ppp) + '_wpiwp' * self.wpiwp
+        path = 'result/' * (budget_iteration_length != 11) + 'result0/' * (budget_iteration_length == 11) + \
+               self.model_name + '_' + wallet_distribution_type + '_ppp' + str(ppp) + '_wpiwp' * self.wpiwp
         if not os.path.isdir(path):
             os.mkdir(path)
         fw = open(path + '/' + self.dataset_name + '_' + self.cascade_model + '_' + self.product_name + '_bi' + str(bi) + '.txt', 'w')
