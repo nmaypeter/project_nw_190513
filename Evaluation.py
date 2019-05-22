@@ -124,7 +124,7 @@ class Evaluation:
 
         pro_k_list = [round(pro_k, 4) for pro_k in pro_k_list]
         pnn_k_list = [len(customer) for customer in customer_set]
-        ep = round(sum(pro_k_list))
+        ep = round(sum(pro_k_list), 4)
 
         return ep, pro_k_list, pnn_k_list
 
